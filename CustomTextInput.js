@@ -1,13 +1,15 @@
 // CustomTextInput.js
 import React, { useState, useEffect } from 'react';
-import { TextInput, Animated } from 'react-native';
+import { Dimensions, TextInput, Animated, useWindowDimensions} from 'react-native';
 import { Image, Text, StatusBar, StyleSheet, View } from 'react-native';
 import GestureRecognizer, { swipeDirections } from 'react-native-swipe-gestures';
 import Option from './Option';
-
+import Carousel from 'react-native-reanimated-carousel';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 export default function CustomTextInput({ text, suggestions, handleTextChange }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [displaySuggestions, setDisplaySuggestions] = useState([]);
+    const [componentWidth, setComponentWidth] = useState(Dimensions.get('window').width);
 
     useEffect(() => {
         // Convert suggestions object to array of objects with index and text properties
@@ -17,6 +19,11 @@ export default function CustomTextInput({ text, suggestions, handleTextChange })
         }));
         setDisplaySuggestions(suggestionsArray);
     }, [suggestions]);
+
+    const onLayout = (event) => {
+        const { width } = event.nativeEvent.layout;
+        setComponentWidth(width);
+    };
 
     const handleSwipeUp = () => {
         // Increment index of each suggestion and reset to 0 if it exceeds array length
@@ -28,10 +35,9 @@ export default function CustomTextInput({ text, suggestions, handleTextChange })
     };
 
     const handleSwipeRight = () => {
-        const keys = Object.keys(displaySuggestions);
-        if (keys.length > 0) {
-            const firstKey = keys[0];
-            handleTextChange(text + " " + displaySuggestions[firstKey]);
+        if (displaySuggestions.length > 0) {
+            const firstSuggestion = displaySuggestions[0];
+            handleTextChange(text + " " + firstSuggestion.text);
         }
     };
 
@@ -53,7 +59,7 @@ export default function CustomTextInput({ text, suggestions, handleTextChange })
     };
 
     return (
-        <View style={styles.container}>
+        <View style={styles.container} onLayout={onLayout}>
             <GestureRecognizer onSwipe={(direction, state) => onSwipe(direction)} config={config}>
                 <View style={styles.inputContainer}>
                     <TextInput
@@ -64,12 +70,21 @@ export default function CustomTextInput({ text, suggestions, handleTextChange })
                         onSwipeUp={handleSwipeUp}
                     />
                 </View>
-                {/* Sort suggestions by index before rendering */}
-                {displaySuggestions.sort((a, b) => a.index - b.index).map((suggestion, index) => (
-                    <View key={index}>
-                        <Option version={index === 0 ? 'blue' : 'grey'} text={suggestion.text} />
-                    </View>
-                ))}
+                <GestureHandlerRootView style={{ flex: 0 }}>
+                    <Carousel
+                        loop
+                        vertical={true}
+                        width={componentWidth}
+                        height={100}
+                        autoPlay={false}
+                        data={displaySuggestions}
+                        scrollAnimationDuration={500}
+                        onSnapToItem={(index) => setCurrentIndex(index)}
+                        renderItem={({ item }) => (
+                            <Option text={item.text} />
+                        )}
+                    />
+                </GestureHandlerRootView>
             </GestureRecognizer>
         </View>
     );
