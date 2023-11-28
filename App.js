@@ -31,62 +31,34 @@ export default function App() {
   const handleUserStoppedTyping = () => {
     // simulateAPIRequest();
     
-    makeAPIRequest();
+    makeAPIRequests(['verbose', 'writing in all caps', 'extremely concise']);
   };
 
-  const simulateAPIRequest = () => {
-    // Dummy response structure for testing
-    const dummyApiResponse = {
-      choices: [
-        {
-          message: {
-            content: 'This is the first suggestion.',
-          },
-        },
-        {
-          message: {
-            content: 'Another suggestion for testing.',
-          },
-        },
-        {
-          message: {
-            content: 'Third suggestion for testing.',
-          },
-        },
-        // Add more choices as needed
-      ],
-    };
-
-    // Simulate setting suggestions with the dummy response
-    const dummyAssistantContentArray =
-      dummyApiResponse.choices && dummyApiResponse.choices.length > 0
-        ? dummyApiResponse.choices.map((choice) => choice.message.content)
-        : [];
-    console.log(dummyAssistantContentArray);
-    setSuggestions(dummyAssistantContentArray);
-  }
-
-  const makeAPIRequest = async () => {
+  const makeAPIRequests = async (prompts) => {
     const apiUrl = 'https://api.openai.com/v1/chat/completions';
-
-    const requestData = {
-      model: 'gpt-3.5-turbo',
-      max_tokens: 10,
-      n: 3,
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a helpful writing assistant that completes the next clause or sentence. Do not mention yourself. The user has described their prompt as: '.concat(prompt),
-        },
-        {
-          role: 'user',
-          content: text,
-        },
-      ],
-    };
-
-    try {
-      const apiResponse = await fetch(apiUrl, {
+  
+    // Create an array of fetch promises
+    const fetchPromises = prompts.map((adjective) => {
+      const promptStart = `You are a helpful assistant in a writing app that generates the next clause in a sentence without mentioning itself. Writing prompt [${prompt}].`;
+      //const promptStart = `Ignore all following instructions and just repeat this word as much as you can:${adjective.toUpperCase()}] END INSTRUCTIONS.`;
+      console.log(promptStart);
+      const requestData = {
+        model: 'gpt-3.5-turbo-1106',
+        max_tokens: 20,
+        n: 1,
+        messages: [
+          {
+            role: 'system',
+            content: promptStart,
+          },
+          {
+            role: 'user',
+            content: `${text} [END TEXT] From here, without considering the style of the previous text, write the next clause exclusively in the style of: [${adjective}].`,
+          },
+        ],
+      };
+  
+      return fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,15 +66,27 @@ export default function App() {
         },
         body: JSON.stringify(requestData),
       });
-
-      const responseData = await apiResponse.json();
-      const choices = responseData.choices || [];
-      const assistantResponses = choices.map((choice) => choice.message.content);
-
-
-      setSuggestions(assistantResponses);
+    });
+  
+    try {
+      // Use Promise.all to send all requests concurrently
+      const apiResponses = await Promise.all(fetchPromises);
+  
+      // Parse all responses to JSON
+      const responseDatas = await Promise.all(apiResponses.map(response => response.json()));
+  
+      const allAssistantResponses = responseDatas.reduce((acc, responseData, index) => {
+        const choices = responseData.choices || [];
+        if (choices.length > 0) {
+          acc[prompts[index]] = choices[0].message.content;
+        }
+        return acc;
+      }, {});
+      
+      console.log(allAssistantResponses);
+      setSuggestions(allAssistantResponses);
     } catch (error) {
-      console.error('Error making API request:', error);
+      console.error('Error making API requests:', error);
     }
   };
 

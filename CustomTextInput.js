@@ -8,19 +8,20 @@ import * as Animatable from 'react-native-animatable';
 
 export default function CustomTextInput({ text, suggestions, handleTextChange }) {
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [displaySuggestions, setDisplaySuggestions] = useState(suggestions);
-
+    const [displaySuggestions, setDisplaySuggestions] = useState({});
 
     useEffect(() => {
-        setDisplaySuggestions([...suggestions]);
-      }, [suggestions]);
+        setDisplaySuggestions({ ...suggestions });
+    }, [suggestions]);
 
-      const handleSwipeUp = () => {
-        setDisplaySuggestions((prevSuggestions) => {
-            const rotatedSuggestions = [...prevSuggestions.slice(1), prevSuggestions[0]];
-            setCurrentIndex((prevIndex) => (prevIndex + 1) % suggestions.length);
-            return rotatedSuggestions;
-        });
+    const handleSwipeUp = () => {
+        const keys = Object.keys(displaySuggestions);
+        const rotatedKeys = [...keys.slice(1), keys[0]];
+        const rotatedSuggestions = rotatedKeys.reduce((acc, key) => {
+            acc[key] = displaySuggestions[key];
+            return acc;
+        }, {});
+        setDisplaySuggestions(rotatedSuggestions);
         animateSuggestions();
     };
 
@@ -28,18 +29,17 @@ export default function CustomTextInput({ text, suggestions, handleTextChange })
 
     const animateSuggestions = () => {
         animatableRefs.forEach((ref, index) => {
-            
-            ref.current.fadeIn((index)*1500/animatableRefs.length);
-            
-            
+
+            ref.current.fadeIn((index) * 1500 / animatableRefs.length);
+
+
         });
     };
     const handleSwipeRight = () => {
-
-        if (suggestions.length > 0) {
-            animatableRefs[0].current.animate({ 0: { translateX: 0 }, 1: { translateX: 400} }).then(()=>
-            handleTextChange(text + " " + displaySuggestions[0])
-            )
+        const keys = Object.keys(displaySuggestions);
+        if (keys.length > 0) {
+            const firstKey = keys[0];
+            handleTextChange(text + " " + displaySuggestions[firstKey]);
         }
     };
 
@@ -73,14 +73,13 @@ export default function CustomTextInput({ text, suggestions, handleTextChange })
                         onSwipeUp={handleSwipeUp}
                     />
                 </View>
-                {displaySuggestions.map((option, index) => (
+                {Object.keys(displaySuggestions).map((key, index) => (
                     <Animatable.View
                         ref={animatableRefs[index]}
                         key={index}
                         duration={500}
-                        
                     >
-                        <Option version={index === 0 ? 'blue' : 'grey'} text={option} />
+                        <Option version={index === 0 ? 'blue' : 'grey'} text={displaySuggestions[key]} />
                     </Animatable.View>
                 ))}
             </GestureRecognizer>
@@ -89,7 +88,7 @@ export default function CustomTextInput({ text, suggestions, handleTextChange })
 }
 
 const styles = StyleSheet.create({
-    
+
     container: {
         // backgroundColor: "#F00",
         flexDirection: 'column',
