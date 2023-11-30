@@ -10,7 +10,7 @@ const Option = ({ version, text }) => {
     return (
         <View style={containerStyle}>
             <Text style={textStyle}>
-                {text.length > 0 ? (
+                {text && text.length > 0 ? (
                     <>
                         {text}{' '}
                         <Image
