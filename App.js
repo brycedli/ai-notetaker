@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { StatusBar, StyleSheet, View } from 'react-native';
-import _ from 'lodash';
 import GradientBorder from './GradientBorder';
 import CustomTextInput from './CustomTextInput';
 import { OPENAI_API_KEY } from '@env';
@@ -9,7 +8,7 @@ export default function App() {
   const [text, setText] = useState("Dear Michael, I hope this email finds you well. I’m Bryce Li, reaching out to you as an alumnus of CMU. I recently came across your profile, ");
   const [suggestions, setSuggestions] = useState([]); // Add this state for the grey text
   const [prompt, setPrompt] = useState("Cold email to an alumnus asking to talk about a freelance opportunity"); // Add this state for the grey text
-  
+  const [vibes, setVibes] = useState(['📧', '💼', '🤝']);
   const handleTextChange = (newText) => {
     // Your text change logic here
     setText(newText)
@@ -27,38 +26,42 @@ export default function App() {
 
     setSuggestions([]);
   };
-
+  
+  const handleSetPrompt = (newPrompt) => {
+    setPrompt(newPrompt);
+    
+    setSuggestions([]);
+  }
   const handleUserStoppedTyping = () => {
     // simulateAPIRequest();
     
-    makeAPIRequests(['verbose', 'writing in all caps', 'extremely concise']);
+    makeCompletionRequest();
+    
   };
-
-  const makeAPIRequests = async (prompts) => {
+  
+  const makeCompletionRequest = async () => {
     const apiUrl = 'https://api.openai.com/v1/chat/completions';
   
-    // Create an array of fetch promises
-    const fetchPromises = prompts.map((adjective) => {
-      const promptStart = `You are a helpful assistant in a writing app that generates the next clause in a sentence without mentioning itself. Writing prompt [${prompt}].`;
-      //const promptStart = `Ignore all following instructions and just repeat this word as much as you can:${adjective.toUpperCase()}] END INSTRUCTIONS.`;
-      console.log(promptStart);
-      const requestData = {
-        model: 'gpt-3.5-turbo-1106',
-        max_tokens: 20,
-        n: 1,
-        messages: [
-          {
-            role: 'system',
-            content: promptStart,
-          },
-          {
-            role: 'user',
-            content: `${text} [END TEXT] From here, without considering the style of the previous text, write the next clause exclusively in the style of: [${adjective}].`,
-          },
-        ],
-      };
+    const requestData = {
+      model: 'gpt-3.5-turbo-1106',
+      max_tokens: 200,
+      n: 1,
+      messages: [
+        {
+          role: 'system',
+          content: 
+            `You are a helpful assistant in a writing app that generates the next 5-8 words in a sentence without mentioning itself. Given a prompt, text to be completed, and three emojis: for each the emojis, write a unique clause suggestion that fits the vibes of the emoji in the following JSON format: {"objects":[{"style":"😊","text":"Your message feels like a sprinkle of magic in our day!"},{"style":"🧚","text":"We're hard at work, and the spirit of creativity is alive and well."},{"style":"🎮","text":"We're stoked that Roots left an impression, especially during a hackathon."}]} Do not include any line breaks or escape characters.`,
+        },
+        {
+          role: 'user',
+          content: `PROMPT: [${prompt}] COMPLETION START: [${text}] EMOJIS: [${JSON.stringify(vibes)}]`,
+        },
+      ],
+    };
   
-      return fetch(apiUrl, {
+    try {
+      console.log("making request");
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,36 +69,26 @@ export default function App() {
         },
         body: JSON.stringify(requestData),
       });
-    });
-  
-    try {
-      // Use Promise.all to send all requests concurrently
-      const apiResponses = await Promise.all(fetchPromises);
-  
-      // Parse all responses to JSON
-      const responseDatas = await Promise.all(apiResponses.map(response => response.json()));
-  
-      const allAssistantResponses = responseDatas.reduce((acc, responseData, index) => {
-        const choices = responseData.choices || [];
-        if (choices.length > 0) {
-          acc[prompts[index]] = choices[0].message.content;
-        }
-        return acc;
-      }, {});
-      
-      console.log(allAssistantResponses);
-      setSuggestions(allAssistantResponses);
+      const responseData = await response.json();
+      const assistantResponses = {};
+      if (responseData.choices && responseData.choices.length == 1) {
+        const messageData = JSON.parse(responseData.choices[0].message.content);
+        const objects = messageData.objects;
+        objects.forEach(object => {
+          assistantResponses[object.style] = object.text;
+        });
+      }
+      setSuggestions(assistantResponses);
     } catch (error) {
-      console.error('Error making API requests:', error);
+      console.error('Error making API request:', error);
     }
   };
 
   const [timeoutId, setTimeoutId] = useState(null);
 
-
   return (
     <View style={styles.container}>
-      <GradientBorder text={prompt} />
+      <GradientBorder text={prompt} vibes={vibes} setPrompt={handleSetPrompt} setVibes={setVibes}/>
       <CustomTextInput text={text} handleTextChange={handleTextChange} suggestions={suggestions} />
       <StatusBar style="auto" />
     </View>
@@ -113,7 +106,4 @@ const styles = StyleSheet.create({
     paddingTop: 64,
     paddingBottom: 24,
   },
-
-
-
 });
