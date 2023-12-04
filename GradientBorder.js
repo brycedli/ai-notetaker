@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, Image, TextInput, Modal, Pressable, Text, View, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Button } from 'react-native';
+import { Animated, Button } from 'react-native';
 import { OPENAI_API_KEY } from '@env';
 
 

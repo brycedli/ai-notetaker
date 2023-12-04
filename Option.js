@@ -1,29 +1,30 @@
 import React, { useState } from 'react';
-import { Image, View, Text, StyleSheet } from 'react-native';
+import { Image, View, Text, StyleSheet , TouchableOpacity} from 'react-native';
 
-const Option = ({ version, text }) => {
+const Option = ({ version, text , onPress}) => {
     const containerStyle =
         version === 'blue' ? styles.blueContainer : styles.greyContainer;
     const textStyle = version === 'blue' ? styles.blueText : styles.greyText;
     const imageSource = version === 'blue' ? require('./assets/right.png') : require('./assets/up.png');
 
     return (
-        <View style={containerStyle}>
-            <Text style={textStyle}>
-                {text && text.length > 0 ? (
-                    <>
-                        {text}{' '}
-                        <Image
-                            style={styles.icon}
-                            source={imageSource}
-                        />
-                    </>
-                ) : (
-                    null // or any other fallback content
-                )}
-            </Text>
-        </View>
-
+        <TouchableOpacity onPress={onPress}>
+            <View style={containerStyle}>
+                <Text style={textStyle}>
+                    {text && text.length > 0 ? (
+                        <>
+                            {text}{' '}
+                            <Image
+                                style={styles.icon}
+                                source={imageSource}
+                            />
+                        </>
+                    ) : (
+                        null // or any other fallback content
+                    )}
+                </Text>
+            </View>
+        </TouchableOpacity>
     );
 };
 
