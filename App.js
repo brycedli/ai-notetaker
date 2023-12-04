@@ -5,10 +5,10 @@ import CustomTextInput from './CustomTextInput';
 import { OPENAI_API_KEY } from '@env';
 
 export default function App() {
-  const [text, setText] = useState("");
+  const [text, setText] = useState("Dear Michael, I hope this email finds you well. I’m Bryce Li, reaching out to you as an alumnus of CMU. I recently came across your profile,");
   const [suggestions, setSuggestions] = useState([]); // Add this state for the grey text
   const [prompt, setPrompt] = useState("Cold email to an alumnus asking to talk about a freelance opportunity"); // Add this state for the grey text
-  const [vibes, setVibes] = useState(['📧', '💼', '🤝']);
+  const [vibes, setVibes] = useState(['🎉', '🫡', '🤝']);
   const [isLoading, setIsLoading] = useState(false); // Add this state for loading
 
 
@@ -53,7 +53,7 @@ export default function App() {
         {
           role: 'system',
           content: 
-            `You are a helpful assistant in a writing app that generates the next 5-8 words in a sentence without mentioning itself. Given a prompt, text to be completed, and three emojis: for each the emojis, write three unique continuations of ONLY the next clause in the provided text that fits the vibes of the emoji in the following JSON format: {"objects":[{"style":"😊","text":"and your message feels like a sprinkle of magic in our day!"},{"style":"🧚","text":". We're hard at work, and the spirit of creativity is alive and well."},{"style":"🎮","text":", but we're stoked that Roots left an impression, especially during a hackathon."}]} Do not include any line breaks or escape characters.`,
+            `You are a helpful assistant in a writing app that generates the next 5-8 words in a sentence without mentioning itself. Given a prompt, text to be completed, and three emojis: for each the emojis, write three unique grammatically correct continuations that continue the next clause of that fits the vibes of the emoji in the following JSON format: {"objects":[{"style":"😊","text":"your message feels like a sprinkle of magic in our day!"},{"style":"🧚","text":". We're hard at work, and the spirit of creativity is alive and well."},{"style":"🎮","text":", but we're stoked that Roots left an impression, especially during a hackathon."}]} Do not include any line breaks or escape characters.`,
         },
         {
           role: 'user',
